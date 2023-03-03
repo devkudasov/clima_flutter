@@ -12,11 +12,11 @@ class LocationScreen extends StatefulWidget {
 }
 
 class _LocationScreenState extends State<LocationScreen> {
-
   WeatherModel weatherModel = WeatherModel();
   int? temperature;
-  int? condition;
   String? cityName;
+  String? weatherIcon;
+  String? weatherMessage;
 
   @override
   void initState() {
@@ -27,11 +27,21 @@ class _LocationScreenState extends State<LocationScreen> {
 
   void updateUI(dynamic weatherData) {
     setState(() {
+      if (weatherModel == null) {
+        temperature = 0;
+        weatherIcon = 'Error';
+        weatherMessage = 'Unable to get weather data';
+        cityName = '';
+        return;
+      }
       double temp = weatherData['main']['temp'];
       temperature = temp.toInt();
 
-      condition = weatherData['weather'][0]['id'];
+      int condition = weatherData['weather'][0]['id'];
+      weatherIcon = weatherModel.getWeatherIcon(condition);
+
       cityName = weatherData['name'];
+      weatherMessage = '${weatherModel.getMessage(temperature!)} in $cityName';
     });
   }
 
@@ -57,7 +67,9 @@ class _LocationScreenState extends State<LocationScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () async {
+                      updateUI(await weatherModel.getLocationWeather());
+                    },
                     child: const Icon(
                       Icons.near_me,
                       size: 50.0,
@@ -81,7 +93,7 @@ class _LocationScreenState extends State<LocationScreen> {
                       style: kTempTextStyle,
                     ),
                     Text(
-                      weatherModel.getWeatherIcon(condition!),
+                      weatherIcon!,
                       style: kConditionTextStyle,
                     ),
                   ],
@@ -90,7 +102,7 @@ class _LocationScreenState extends State<LocationScreen> {
               Padding(
                 padding: const EdgeInsets.only(right: 15.0),
                 child: Text(
-                  '${weatherModel.getMessage(temperature!)} in $cityName',
+                  weatherMessage!,
                   textAlign: TextAlign.right,
                   style: kMessageTextStyle,
                 ),
